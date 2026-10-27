@@ -15,11 +15,25 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react"; // iconos para mostrar u ocultar la contraseña
+
+// Supabase devuelve los errores en inglés; aquí los pasamos a mensajes claros en español
+function translateError(message: string) {
+  if (message.includes("Invalid login credentials")) {
+    return "El correo o la contraseña son incorrectos.";
+  }
+  if (message.includes("Email not confirmed")) {
+    return "Debes confirmar tu correo antes de iniciar sesión.";
+  }
+  return "Ocurrió un error. Inténtalo de nuevo.";
+}
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  // La "pizarra" del componente: lo que debe recordar
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +52,15 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+      // Cambiar esta ruta por la pantalla principal de la app cuando exista.
+      // El usuario ya tiene la sesión iniciada en este punto.
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(
+        error instanceof Error
+          ? translateError(error.message)
+          : "Ocurrió un error. Inténtalo de nuevo."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -51,20 +70,20 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Ingresa tu correo para entrar a tu cuenta
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Correo electrónico</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="nombre@ejemplo.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -72,34 +91,49 @@ export function LoginForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Contraseña</Label>
                   <Link
                     href="/auth/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
-                    Forgot your password?
+                    ¿Olvidaste tu contraseña?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                {/* "relative" permite colocar el botón del ojo encima del campo */}
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  {/* type="button" evita que este botón envíe el formulario */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Ingresando..." : "Iniciar sesión"}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              ¿No tienes una cuenta?{" "}
               <Link
                 href="/auth/sign-up"
                 className="underline underline-offset-4"
               >
-                Sign up
+                Regístrate
               </Link>
             </div>
           </form>
