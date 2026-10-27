@@ -61,7 +61,8 @@ export function SignUpForm({
       });
       if (error) throw error;
       router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
+       } catch (error: unknown) {
+      console.error(error);
       setError(
         error instanceof Error
           ? translateError(error.message)
