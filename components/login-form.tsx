@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react"; // iconos para mostrar u ocultar la contraseña
 
-// Supabase devuelve los errores en inglés; aquí los pasamos a mensajes claros en español
 function translateError(message: string) {
   if (message.includes("Invalid login credentials")) {
     return "El correo o la contraseña son incorrectos.";
@@ -32,7 +31,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  // La "pizarra" del componente: lo que debe recordar
+  //lo que debe recordar
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
