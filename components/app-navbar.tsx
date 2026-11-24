@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react"; //modo oscuro
+import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { iniciales } from "@/lib/tutorias";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,7 @@ const links = [
   { href: "/protected", label: "Inicio", ready: true },
   { href: "/protected/mis-tutorias", label: "Mis Tutorías", ready: false },
   { href: "/protected/solicitar-tutor", label: "Solicitar Tutor", ready: false },
-  { href: "/protected/perfil", label: "Mi Perfil", ready: false },
+  { href: "/protected/perfil", label: "Mi Perfil", ready: true },
 ];
 
 function nombreDesdeCorreo(email: string) {
@@ -26,6 +27,7 @@ function nombreDesdeCorreo(email: string) {
 export function AppNavbar({ email }: { email: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { resolvedTheme, setTheme } = useTheme(); //modo oscuro
   const nombre = nombreDesdeCorreo(email);
 
   const cerrarSesion = async () => {
@@ -78,17 +80,23 @@ export function AppNavbar({ email }: { email: string }) {
           <span className="hidden text-sm text-white/85 sm:inline">
             Hola, {nombre} (Estudiante)
           </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold ring-2 ring-white/20 transition-transform hover:scale-105">
+         <Link
+            href="/protected/perfil"
+            aria-label="Ir a mi perfil"
+            title="Mi Perfil"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold ring-2 ring-white/20 transition-transform hover:scale-105"
+          >
             {iniciales(nombre)}
-          </div>
+          </Link>
           <button
             type="button"
-            onClick={cerrarSesion}
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label="Cambiar entre modo claro y oscuro"
+            title="Cambiar entre modo claro y oscuro"
             className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white active:scale-90"
           >
-            <LogOut size={18} />
+            <Moon size={18} className="dark:hidden" />
+            <Sun size={18} className="hidden dark:block" />
           </button>
         </div>
       </div>
