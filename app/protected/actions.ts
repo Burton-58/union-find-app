@@ -193,3 +193,71 @@ export async function eliminarSolicitud(id: string): Promise<Resultado> {
   revalidatePath("/protected/solicitar-tutor");
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Administración
+// Las reglas viven en la base de datos (supabase/005_admin.sql): aunque alguien
+// llame estas acciones sin ser administrador, la base de datos las rechaza.
+// ---------------------------------------------------------------------------
+
+// Códigos que lanzan public.admin_delete_post() / public.admin_delete_user()
+const ERRORES_ADMIN: Record<string, string> = {
+  not_authenticated: "Vuelve a iniciar sesión.",
+  not_admin: "Solo los administradores pueden hacer esto.",
+  post_not_found: "Esa tutoría ya no existe.",
+  user_not_found: "Esa cuenta ya no existe.",
+  cannot_delete_self: "No puedes eliminar tu propia cuenta.",
+};
+
+const errorAdmin = (codigo: string) =>
+  ERRORES_ADMIN[codigo] ?? "No pudimos completar la acción. Inténtalo de nuevo.";
+
+/** Elimina una tutoría y todas sus inscripciones. */
+export async function eliminarTutoriaAdmin(postId: string): Promise<Resultado> {
+  if (!esUuid(postId)) return { ok: false, error: "Tutoría inválida." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_delete_post", { p_post_id: postId });
+  if (error) return { ok: false, error: errorAdmin(error.message) };
+
+  revalidatePath("/protected", "layout");
+  return { ok: true };
+}
+
+/** Elimina una cuenta completa (login, perfil, tutorías, inscripciones, reseñas). */
+export async function eliminarUsuarioAdmin(userId: string): Promise<Resultado> {
+  if (!esUuid(userId)) return { ok: false, error: "Usuario inválido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_delete_user", { p_user_id: userId });
+  if (error) return { ok: false, error: errorAdmin(error.message) };
+
+  revalidatePath("/protected", "layout");
+  return { ok: true };
+}
+
+/** Quita a un estudiante de una tutoría (la política RLS solo lo permite a admins). */
+export async function quitarEstudianteAdmin(
+  postId: string,
+  studentId: string,
+): Promise<Resultado> {
+  if (!esUuid(postId) || !esUuid(studentId)) {
+    return { ok: false, error: "Inscripción inválida." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("enrollments")
+    .delete()
+    .eq("post_id", postId)
+    .eq("student_id", studentId)
+    .select("id");
+
+  if (error) return { ok: false, error: "No pudimos quitar al estudiante. Inténtalo de nuevo." };
+  if (!data || data.length === 0) {
+    return { ok: false, error: "No tienes permiso o el estudiante ya no está inscrito." };
+  }
+
+  revalidatePath("/protected", "layout");
+  return { ok: true };
+}

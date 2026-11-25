@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Calendar, Users } from "lucide-react";
+import { ArrowLeft, Calendar, ShieldCheck, Users } from "lucide-react";
+import { AdminBoton } from "@/components/admin/admin-boton";
+import { RolBadge } from "@/components/rol-badge";
 import { ResumenCalificacion } from "@/components/estrellas";
 import { ResenasSection } from "@/components/resenas/resenas-section";
 import { createClient } from "@/lib/supabase/server";
@@ -62,12 +64,26 @@ async function PerfilPublico({ params }: { params: Promise<{ id: string }> }) {
             {iniciales(nombre)}
           </div>
           <h1 className="mt-3 text-xl font-bold">{nombre}</h1>
-          <span className="mt-1 rounded-md bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 dark:bg-sky-500/20 dark:text-sky-300">
-            {etiquetaRol(perfil.rol, perfil.esTutor)}
-          </span>
+          <RolBadge
+            rol={perfil.rol}
+            etiqueta={etiquetaRol(perfil.rol, perfil.esTutor)}
+            className="mt-1"
+          />
           {esTutor && (
             <div className="mt-2">
               <ResumenCalificacion calificacion={calificacion} />
+            </div>
+          )}
+          {viewer.rol === "admin" && (
+            <div className="mt-4 flex w-full flex-col items-center gap-2 border-t pt-4">
+              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+                <ShieldCheck size={14} />
+                Administración
+              </p>
+              <AdminBoton
+                accion={{ tipo: "usuario", userId: perfil.id, nombre }}
+                redirigirA="/protected/admin"
+              />
             </div>
           )}
         </aside>

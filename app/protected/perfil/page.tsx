@@ -1,7 +1,9 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Mail, ShieldCheck } from "lucide-react";
 import { PerfilNombreForm } from "@/components/perfil-nombre-form";
+import { RolBadge } from "@/components/rol-badge";
 import { ResumenCalificacion } from "@/components/estrellas";
 import { ResenasSection } from "@/components/resenas/resenas-section";
 import { createClient } from "@/lib/supabase/server";
@@ -33,7 +35,7 @@ async function PerfilContenido() {
   const nombre = nombreGuardado || email.split("@")[0];
   const rolClave: Role = (fila?.role as Role | undefined) ?? "student";
 
-  // Los tutores (rol tutor/admin o con tutorías publicadas) ven su calificación y las reseñas que han recibido
+  // Los tutores (rol tutor o con tutorías publicadas) ven su calificación y las reseñas que han recibido
   const esTutor = await calcularEsTutor(supabase, claims.sub, rolClave);
   const rol = etiquetaRol(rolClave, esTutor);
   const [calificaciones, resenas] = esTutor
@@ -59,13 +61,20 @@ async function PerfilContenido() {
             {iniciales(nombre)}
           </div>
           <h2 className="mt-3 text-xl font-bold">{nombre}</h2>
-          <span className="mt-1 rounded-md bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 dark:bg-sky-500/20 dark:text-sky-300">
-            {rol}
-          </span>
+          <RolBadge rol={rolClave} etiqueta={rol} className="mt-1" />
           {esTutor && (
             <div className="mt-2">
               <ResumenCalificacion calificacion={calificacion} />
             </div>
+          )}
+          {rolClave === "admin" && (
+            <Link
+              href="/protected/admin"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 active:scale-95"
+            >
+              <ShieldCheck size={16} />
+              Abrir panel de administración
+            </Link>
           )}
         </aside>
 

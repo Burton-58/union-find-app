@@ -157,15 +157,17 @@ export async function tieneTutorias(
 }
 
 /**
- * Tutor = rol tutor/admin O tener al menos una tutoría. Así un estudiante
- * que da tutorías no necesita una segunda cuenta.
+ * Tutor = rol tutor O tener al menos una tutoría. Así un estudiante que da
+ * tutorías no necesita una segunda cuenta. El administrador NO es tutor
+ * por ser administrador: solo cuenta como tutor si es dueño de tutorías.
  */
 export async function calcularEsTutor(
   supabase: SupabaseClient,
   usuarioId: string,
   rol: Role,
 ): Promise<boolean> {
-  return rol !== "student" || (await tieneTutorias(supabase, usuarioId));
+  if (rol === "tutor") return true;
+  return tieneTutorias(supabase, usuarioId);
 }
 
 export type Perfil = Persona & { rol: Role; esTutor: boolean };

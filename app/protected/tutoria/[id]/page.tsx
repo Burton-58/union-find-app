@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Info, Lock, Star } from "lucide-react";
+import { ArrowLeft, Info, Lock, ShieldCheck, Star } from "lucide-react";
+import { AdminBoton } from "@/components/admin/admin-boton";
 import { InscripcionButton } from "@/components/inscripcion-button";
 import { ResumenCalificacion } from "@/components/estrellas";
 import { createClient } from "@/lib/supabase/server";
-import { getInscripciones, getTutoria, getViewer } from "@/lib/tutorias_db";
+import { getInscripciones, getInscritosPorTutoria, getTutoria, getViewer } from "@/lib/tutorias_db";
 import { puedeCalificar } from "@/lib/resenas";
 import {
   colorMateria,
@@ -30,10 +31,14 @@ async function TutoriaDetalle({ params }: { params: Promise<{ id: string }> }) {
   if (!tutoria) notFound();
 
   const tutorId = tutoria.tutor?.id ?? null;
-  const [inscripciones, calificar] = await Promise.all([
+  const esAdmin = viewer.rol === "admin";
+  const [inscripciones, calificar, roster] = await Promise.all([
     getInscripciones(supabase, viewer.id),
     tutorId ? puedeCalificar(supabase, tutorId) : Promise.resolve(false),
+    // Solo los administradores ven (y pueden quitar) a los inscritos desde aquí
+    esAdmin ? getInscritosPorTutoria(supabase, [tutoria.id]) : Promise.resolve(null),
   ]);
+  const estudiantes = roster?.get(tutoria.id) ?? [];
 
   const inscrito = inscripciones.has(tutoria.id);
   const libres = cuposLibres(tutoria);
@@ -107,6 +112,56 @@ async function TutoriaDetalle({ params }: { params: Promise<{ id: string }> }) {
               >
                 Calificar tutor
               </Link>
+            </div>
+          )}
+
+          {esAdmin && (
+            <div className="flex flex-col gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-500/30 dark:bg-violet-500/10">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-sm font-bold text-violet-900 dark:text-violet-200">
+                  <ShieldCheck size={16} className="shrink-0" />
+                  Acciones de administrador
+                </p>
+                <AdminBoton
+                  accion={{
+                    tipo: "tutoria",
+                    postId: tutoria.id,
+                    materia: tutoria.materia,
+                    inscritos: tutoria.inscritos,
+                  }}
+                  redirigirA="/protected"
+                />
+              </div>
+              <details className="text-sm text-violet-900 dark:text-violet-200">
+                <summary className="cursor-pointer font-medium">
+                  Estudiantes inscritos ({estudiantes.length})
+                </summary>
+                {estudiantes.length === 0 ? (
+                  <p className="mt-2 opacity-80">Nadie se ha inscrito todavía.</p>
+                ) : (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {estudiantes.map((e) => (
+                      <li key={e.id} className="flex items-center justify-between gap-2">
+                        <Link
+                          href={`/protected/perfil/${e.id}`}
+                          className="underline-offset-4 hover:underline"
+                        >
+                          {nombreDe(e)}
+                        </Link>
+                        <AdminBoton
+                          accion={{
+                            tipo: "inscripcion",
+                            postId: tutoria.id,
+                            studentId: e.id,
+                            nombre: nombreDe(e),
+                          }}
+                          compacto
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
             </div>
           )}
 

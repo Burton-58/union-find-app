@@ -13,7 +13,14 @@ async function Navbar() {
     redirect("/auth/login");
   }
 
-  return <AppNavbar email={viewer.email} nombre={viewer.nombre} rol={etiquetaRol(viewer.rol, viewer.esTutor)} />;
+  return (
+    <AppNavbar
+      email={viewer.email}
+      nombre={viewer.nombre}
+      rol={etiquetaRol(viewer.rol, viewer.esTutor)}
+      esAdmin={viewer.rol === "admin"}
+    />
+  );
 }
 
 export default function ProtectedLayout({

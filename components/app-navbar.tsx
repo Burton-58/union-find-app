@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Moon, Sun } from "lucide-react"; //modo oscuro
+import { LogOut, Moon, ShieldCheck, Sun } from "lucide-react"; //modo oscuro
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { iniciales } from "@/lib/tutorias";
@@ -14,6 +14,9 @@ const links = [
   { href: "/protected/solicitar-tutor", label: "Solicitar Tutor", ready: true },
   { href: "/protected/perfil", label: "Mi Perfil", ready: true },
 ];
+
+// Solo los administradores ven este enlace
+const linkAdmin = { href: "/protected/admin", label: "Admin", ready: true };
 
 function nombreDesdeCorreo(email: string) {
   return email
@@ -28,16 +31,19 @@ export function AppNavbar({
   email,
   nombre: nombreGuardado,
   rol,
+  esAdmin = false,
 }: {
   email: string;
   nombre: string | null;
   /** Etiqueta ya calculada, p. ej. "Estudiante y Tutor" */
   rol: string;
+  esAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme(); //modo oscuro
   const nombre = nombreGuardado?.trim() || nombreDesdeCorreo(email);
+  const enlaces = esAdmin ? [...links, linkAdmin] : links;
 
   const cerrarSesion = async () => {
     const supabase = createClient();
@@ -56,7 +62,7 @@ export function AppNavbar({
         </Link>
 
         <nav className="order-last flex w-full items-center gap-6 overflow-x-auto pb-1 md:order-none md:w-auto md:flex-1 md:overflow-visible md:pb-0">
-          {links.map((link) => {
+          {enlaces.map((link) => {
             const activo =
               link.href === "/protected"
                 ? pathname === "/protected" ||
@@ -90,14 +96,27 @@ export function AppNavbar({
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-white/85 sm:inline">
-            Hola, {nombre} ({rol})
-          </span>
+          {esAdmin ? (
+            <span className="hidden items-center gap-2 text-sm text-white/85 sm:inline-flex">
+              Hola, {nombre}
+              <span className="inline-flex items-center gap-1 rounded-md bg-violet-500 px-2 py-0.5 text-xs font-bold text-white">
+                <ShieldCheck size={12} aria-hidden />
+                {rol}
+              </span>
+            </span>
+          ) : (
+            <span className="hidden text-sm text-white/85 sm:inline">
+              Hola, {nombre} ({rol})
+            </span>
+          )}
           <Link
             href="/protected/perfil"
             aria-label="Ir a mi perfil"
             title="Mi Perfil"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold ring-2 ring-white/20 transition-transform hover:scale-105"
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold ring-2 transition-transform hover:scale-105",
+              esAdmin ? "ring-violet-400" : "ring-white/20",
+            )}
           >
             {iniciales(nombre)}
           </Link>
