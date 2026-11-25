@@ -2,14 +2,12 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Mail, ShieldCheck } from "lucide-react";
 import { PerfilNombreForm } from "@/components/perfil-nombre-form";
+import { ResumenCalificacion } from "@/components/estrellas";
+import { ResenasSection } from "@/components/resenas/resenas-section";
 import { createClient } from "@/lib/supabase/server";
-import { iniciales } from "@/lib/tutorias";
-
-const roles: Record<string, string> = {
-  student: "Estudiante",
-  tutor: "Tutor",
-  admin: "Administrador",
-};
+import { getCalificaciones, getResenas } from "@/lib/resenas";
+import { ROLES } from "@/lib/roles";
+import { iniciales, type Role } from "@/lib/tutorias";
 
 async function PerfilContenido() {
   const supabase = await createClient();
@@ -32,7 +30,18 @@ async function PerfilContenido() {
 
   const nombreGuardado: string = fila?.full_name ?? "";
   const nombre = nombreGuardado || email.split("@")[0];
-  const rol = roles[fila?.role ?? "student"] ?? "Estudiante";
+  const rolClave: Role = (fila?.role as Role | undefined) ?? "student";
+  const rol = ROLES[rolClave] ?? "Estudiante";
+
+  // Los tutores ven su calificación y las reseñas que han recibido
+  const esTutor = rolClave !== "student";
+  const [calificaciones, resenas] = esTutor
+    ? await Promise.all([
+        getCalificaciones(supabase, [claims.sub]),
+        getResenas(supabase, claims.sub),
+      ])
+    : [null, []];
+  const calificacion = calificaciones?.get(claims.sub) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,6 +61,11 @@ async function PerfilContenido() {
           <span className="mt-1 rounded-md bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 dark:bg-sky-500/20 dark:text-sky-300">
             {rol}
           </span>
+          {esTutor && (
+            <div className="mt-2">
+              <ResumenCalificacion calificacion={calificacion} />
+            </div>
+          )}
         </aside>
 
         <section className="flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-500 md:p-8">
@@ -83,6 +97,19 @@ async function PerfilContenido() {
           </div>
         </section>
       </div>
+
+      {esTutor && (
+        <ResenasSection
+          tutorId={claims.sub}
+          tutorNombre={nombre}
+          viewerId={claims.sub}
+          viewerRol={rolClave}
+          resenas={resenas}
+          resenaPropia={null}
+          calificacion={calificacion}
+          puedeCalificar={false}
+        />
+      )}
     </div>
   );
 }

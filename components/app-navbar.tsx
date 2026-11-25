@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Moon, Sun } from "lucide-react"; //modo oscuro
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { iniciales } from "@/lib/tutorias";
+import { ROLES } from "@/lib/roles";
+import { iniciales, type Role } from "@/lib/tutorias";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -24,11 +25,19 @@ function nombreDesdeCorreo(email: string) {
     .join(" ");
 }
 
-export function AppNavbar({ email }: { email: string }) {
+export function AppNavbar({
+  email,
+  nombre: nombreGuardado,
+  rol,
+}: {
+  email: string;
+  nombre: string | null;
+  rol: Role;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme(); //modo oscuro
-  const nombre = nombreDesdeCorreo(email);
+  const nombre = nombreGuardado?.trim() || nombreDesdeCorreo(email);
 
   const cerrarSesion = async () => {
     const supabase = createClient();
@@ -50,8 +59,12 @@ export function AppNavbar({ email }: { email: string }) {
           {links.map((link) => {
             const activo =
               link.href === "/protected"
-                ? pathname === "/protected" || pathname.startsWith("/protected/tutoria")
-                : pathname.startsWith(link.href);
+                ? pathname === "/protected" ||
+                  pathname.startsWith("/protected/tutoria") ||
+                  pathname.startsWith("/protected/perfil/")
+                : link.href === "/protected/perfil"
+                  ? pathname === "/protected/perfil"
+                  : pathname.startsWith(link.href);
 
             return link.ready ? (
               <Link
@@ -78,7 +91,7 @@ export function AppNavbar({ email }: { email: string }) {
 
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-white/85 sm:inline">
-            Hola, {nombre} (Estudiante)
+            Hola, {nombre} ({ROLES[rol]})
           </span>
          <Link
             href="/protected/perfil"

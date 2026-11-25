@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Filter, Search, SearchX } from "lucide-react";
 import { TutoriaCard } from "@/components/tutoria-card";
-import { type Tutoria, cuposLibres, materias } from "@/lib/tutorias";
+import { type Tutoria, cuposLibres, haTerminado, nombreDe } from "@/lib/tutorias";
 
 type Orden = "recientes" | "proximas" | "cupos" | "rating";
 
@@ -17,34 +17,49 @@ function normalizar(texto: string) {
 export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
   const [busqueda, setBusqueda] = useState("");
   const [materia, setMateria] = useState("todas");
-  const [presencial, setPresencial] = useState(true);
-  const [virtual, setVirtual] = useState(true);
+  const [finalizadas, setFinalizadas] = useState(true);
   const [orden, setOrden] = useState<Orden>("recientes");
+
+  const materias = useMemo(
+    () => Array.from(new Set(tutorias.map((t) => t.materia))).sort((a, b) => a.localeCompare(b, "es")),
+    [tutorias],
+  );
 
   const resultados = useMemo(() => {
     const q = normalizar(busqueda.trim());
 
     const filtradas = tutorias.filter((t) => {
       if (materia !== "todas" && t.materia !== materia) return false;
-      if (t.modalidad === "presencial" && !presencial) return false;
-      if (t.modalidad === "virtual" && !virtual) return false;
+      if (!finalizadas && haTerminado(t)) return false;
       if (!q) return true;
-      return normalizar(`${t.titulo} ${t.tutor} ${t.codigo} ${t.materia}`).includes(q);
+      return normalizar(`${t.materia} ${nombreDe(t.tutor)}`).includes(q);
     });
 
-    return filtradas.sort((a, b) => {
-      if (orden === "proximas") return a.fecha.localeCompare(b.fecha);
+    const hora = (t: Tutoria) => (t.fecha ? new Date(t.fecha).getTime() : Infinity);
+
+    const comparar = (a: Tutoria, b: Tutoria) => {
+      if (orden === "proximas") {
+        const ha = hora(a);
+        const hb = hora(b);
+        return ha === hb ? 0 : ha < hb ? -1 : 1;
+      }
       if (orden === "cupos") return cuposLibres(b) - cuposLibres(a);
-      if (orden === "rating") return b.rating - a.rating;
+      if (orden === "rating")
+        return (b.calificacion?.promedio ?? 0) - (a.calificacion?.promedio ?? 0);
       return b.publicada.localeCompare(a.publicada);
-    });
-  }, [tutorias, busqueda, materia, presencial, virtual, orden]);
+    };
+
+    // Las tutorías que ya pasaron siempre van al final
+    return [
+      ...filtradas.filter((t) => !haTerminado(t)).sort(comparar),
+      ...filtradas.filter((t) => haTerminado(t)).sort(comparar),
+    ];
+  }, [tutorias, busqueda, materia, finalizadas, orden]);
 
   const limpiar = () => {
     setBusqueda("");
     setMateria("todas");
-    setPresencial(true);
-    setVirtual(true);
+    setFinalizadas(true);
     setOrden("recientes");
   };
 
@@ -88,24 +103,15 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
             </div>
 
             <div className="grid gap-2">
-              <span className="text-xs font-bold uppercase text-muted-foreground">Modalidad</span>
+              <span className="text-xs font-bold uppercase text-muted-foreground">Estado</span>
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={presencial}
-                  onChange={(e) => setPresencial(e.target.checked)}
+                  checked={finalizadas}
+                  onChange={(e) => setFinalizadas(e.target.checked)}
                   className="h-4 w-4 accent-sky-600"
                 />
-                Presencial (Cartago)
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={virtual}
-                  onChange={(e) => setVirtual(e.target.checked)}
-                  className="h-4 w-4 accent-sky-600"
-                />
-                Virtual
+                Mostrar tutorías finalizadas
               </label>
             </div>
 
@@ -146,7 +152,7 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por tema, profesor o código de materia (ej. CE-1102)..."
+              placeholder="Buscar por materia o tutor..."
               className="w-full rounded-xl border bg-card py-3 pl-11 pr-4 text-sm shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
             />
           </div>

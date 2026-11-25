@@ -2,17 +2,17 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AppNavbar } from "@/components/app-navbar";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/tutorias_db";
 
 async function Navbar() {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const email = data?.claims?.email;
+  const viewer = await getViewer(supabase);
 
-  if (!email) {
+  if (!viewer) {
     redirect("/auth/login");
   }
 
-  return <AppNavbar email={email} />;
+  return <AppNavbar email={viewer.email} nombre={viewer.nombre} rol={viewer.rol} />;
 }
 
 export default function ProtectedLayout({
