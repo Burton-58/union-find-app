@@ -121,3 +121,75 @@ export async function eliminarResena(resenaId: string): Promise<Resultado> {
   revalidatePath("/protected", "layout");
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Solicitudes de tutoría ("Solicitar Tutor")
+// ---------------------------------------------------------------------------
+
+export type SolicitudFormState = { error?: string; creada?: boolean };
+
+export async function crearSolicitud(
+  _prev: SolicitudFormState,
+  formData: FormData,
+): Promise<SolicitudFormState> {
+  const materia = String(formData.get("subject") ?? "").trim();
+  const detalle = String(formData.get("details") ?? "").trim();
+
+  if (materia.length < 3 || materia.length > 100) {
+    return { error: "Escribe la materia o tema (entre 3 y 100 caracteres)." };
+  }
+  if (detalle.length > 500) {
+    return { error: "El detalle es muy largo (máximo 500 caracteres)." };
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
+  if (!userId) return { error: "Vuelve a iniciar sesión." };
+
+  const { error } = await supabase.from("tutor_requests").insert({
+    requester_id: userId,
+    subject: materia,
+    details: detalle || null,
+  });
+  if (error) {
+    // La política RLS rechaza la fila cuando ya hay 5 solicitudes abiertas
+    return {
+      error:
+        "No pudimos publicar tu solicitud. Recuerda que puedes tener máximo 5 abiertas; marca alguna como resuelta e inténtalo de nuevo.",
+    };
+  }
+
+  revalidatePath("/protected/solicitar-tutor");
+  return { creada: true };
+}
+
+export async function resolverSolicitud(id: string): Promise<Resultado> {
+  if (!esUuid(id)) return { ok: false, error: "Solicitud inválida." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tutor_requests")
+    .update({ status: "resolved" })
+    .eq("id", id)
+    .select("id");
+  if (error || !data || data.length === 0) {
+    return { ok: false, error: "No pudimos actualizar la solicitud." };
+  }
+  revalidatePath("/protected/solicitar-tutor");
+  return { ok: true };
+}
+
+export async function eliminarSolicitud(id: string): Promise<Resultado> {
+  if (!esUuid(id)) return { ok: false, error: "Solicitud inválida." };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tutor_requests")
+    .delete()
+    .eq("id", id)
+    .select("id");
+  if (error || !data || data.length === 0) {
+    return { ok: false, error: "No tienes permiso para eliminar esa solicitud." };
+  }
+  revalidatePath("/protected/solicitar-tutor");
+  return { ok: true };
+}

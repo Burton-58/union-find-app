@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/protected", label: "Inicio", ready: true },
-  { href: "/protected/mis-tutorias", label: "Mis Tutorías", ready: false },
-  { href: "/protected/solicitar-tutor", label: "Solicitar Tutor", ready: false },
+  { href: "/protected/mis-tutorias", label: "Mis Tutorías", ready: true },
+  { href: "/protected/solicitar-tutor", label: "Solicitar Tutor", ready: true },
   { href: "/protected/perfil", label: "Mi Perfil", ready: true },
 ];
 
