@@ -99,9 +99,9 @@ begin
   if v_uid is null then raise exception 'not_authenticated'; end if;
   if v_uid = p_tutor_id then raise exception 'cannot_review_self'; end if;
 
-  if not exists (
-    select 1 from public.profiles where id = p_tutor_id and role in ('tutor', 'admin')
-  ) then
+  -- Being a tutor is derived from owning sessions (posts), not from profiles.role.
+  -- can_review_tutor() below already requires that you attended one of their sessions.
+  if not exists (select 1 from public.profiles where id = p_tutor_id) then
     raise exception 'tutor_not_found';
   end if;
 

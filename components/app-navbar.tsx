@@ -5,8 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Moon, Sun } from "lucide-react"; //modo oscuro
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { ROLES } from "@/lib/roles";
-import { iniciales, type Role } from "@/lib/tutorias";
+import { iniciales } from "@/lib/tutorias";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -32,7 +31,8 @@ export function AppNavbar({
 }: {
   email: string;
   nombre: string | null;
-  rol: Role;
+  /** Etiqueta ya calculada, p. ej. "Estudiante y Tutor" */
+  rol: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -91,7 +91,7 @@ export function AppNavbar({
 
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-white/85 sm:inline">
-            Hola, {nombre} ({ROLES[rol]})
+            Hola, {nombre} ({rol})
           </span>
          <Link
             href="/protected/perfil"

@@ -143,7 +143,32 @@ export async function getInscritosPorTutoria(
   return mapa;
 }
 
-export type Perfil = Persona & { rol: Role };
+/** true si este usuario es dueño de al menos una tutoría. */
+export async function tieneTutorias(
+  supabase: SupabaseClient,
+  usuarioId: string,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("posts")
+    .select("id", { count: "exact", head: true })
+    .eq("tutor_id", usuarioId);
+  if (error) throw new Error(error.message);
+  return (count ?? 0) > 0;
+}
+
+/**
+ * Tutor = rol tutor/admin O tener al menos una tutoría. Así un estudiante
+ * que da tutorías no necesita una segunda cuenta.
+ */
+export async function calcularEsTutor(
+  supabase: SupabaseClient,
+  usuarioId: string,
+  rol: Role,
+): Promise<boolean> {
+  return rol !== "student" || (await tieneTutorias(supabase, usuarioId));
+}
+
+export type Perfil = Persona & { rol: Role; esTutor: boolean };
 
 export async function getPerfil(
   supabase: SupabaseClient,
@@ -156,10 +181,22 @@ export async function getPerfil(
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
-  return { id: data.id, nombre: data.full_name, rol: (data.role as Role) ?? "student" };
+  const rol = (data.role as Role) ?? "student";
+  return {
+    id: data.id,
+    nombre: data.full_name,
+    rol,
+    esTutor: await calcularEsTutor(supabase, data.id, rol),
+  };
 }
 
-export type Viewer = { id: string; email: string; nombre: string | null; rol: Role };
+export type Viewer = {
+  id: string;
+  email: string;
+  nombre: string | null;
+  rol: Role;
+  esTutor: boolean;
+};
 
 /** El usuario con sesión iniciada (claims verificados) + su perfil, o null. */
 export async function getViewer(supabase: SupabaseClient): Promise<Viewer | null> {
@@ -172,5 +209,6 @@ export async function getViewer(supabase: SupabaseClient): Promise<Viewer | null
     email: (claims.email as string | undefined) ?? "",
     nombre: perfil?.nombre ?? null,
     rol: perfil?.rol ?? "student",
+    esTutor: perfil?.esTutor ?? false,
   };
 }

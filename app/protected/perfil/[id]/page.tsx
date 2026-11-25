@@ -7,7 +7,7 @@ import { ResenasSection } from "@/components/resenas/resenas-section";
 import { createClient } from "@/lib/supabase/server";
 import { getPerfil, getTutoriasDeTutor, getViewer } from "@/lib/tutorias_db";
 import { getCalificaciones, getResenaPropia, getResenas, puedeCalificar } from "@/lib/resenas";
-import { ROLES } from "@/lib/roles";
+import { etiquetaRol } from "@/lib/roles";
 import {
   esUuid,
   formatFechaCorta,
@@ -37,7 +37,7 @@ async function PerfilPublico({ params }: { params: Promise<{ id: string }> }) {
 
   const nombre = nombreDe(perfil);
   const calificacion = calificaciones.get(id) ?? null;
-  const esTutor = perfil.rol !== "student";
+  const esTutor = perfil.esTutor;
   const mostrarResenas = esTutor || resenas.length > 0;
   const ordenadas = [...tutorias].sort((a, b) => {
     const ta = haTerminado(a) ? 1 : 0;
@@ -63,7 +63,7 @@ async function PerfilPublico({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <h1 className="mt-3 text-xl font-bold">{nombre}</h1>
           <span className="mt-1 rounded-md bg-sky-100 px-2.5 py-1 text-xs font-bold text-sky-800 dark:bg-sky-500/20 dark:text-sky-300">
-            {ROLES[perfil.rol]}
+            {etiquetaRol(perfil.rol, perfil.esTutor)}
           </span>
           {esTutor && (
             <div className="mt-2">

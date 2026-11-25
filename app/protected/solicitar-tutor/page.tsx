@@ -16,7 +16,7 @@ async function SolicitarTutor() {
 
   const solicitudes = await getSolicitudes(supabase);
   const abiertasMias = solicitudes.filter((s) => !s.resuelta && s.autor?.id === viewer.id).length;
-  const esTutor = viewer.rol !== "student";
+  const esTutor = viewer.esTutor;
 
   return (
     <div className="flex flex-col gap-6">
