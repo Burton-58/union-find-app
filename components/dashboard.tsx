@@ -14,10 +14,19 @@ function normalizar(texto: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function diaLocal(iso: string) {
+  const f = new Date(iso);
+  const mes = String(f.getMonth() + 1).padStart(2, "0");
+  const dia = String(f.getDate()).padStart(2, "0");
+  return `${f.getFullYear()}-${mes}-${dia}`;
+}
+
 export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
   const [busqueda, setBusqueda] = useState("");
   const [materia, setMateria] = useState("todas");
   const [finalizadas, setFinalizadas] = useState(true);
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
   const [orden, setOrden] = useState<Orden>("recientes");
 
   const materias = useMemo(
@@ -31,6 +40,12 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
     const filtradas = tutorias.filter((t) => {
       if (materia !== "todas" && t.materia !== materia) return false;
       if (!finalizadas && haTerminado(t)) return false;
+      if (desde || hasta) {
+        if (!t.fecha) return false;
+        const dia = diaLocal(t.fecha);
+        if (desde && dia < desde) return false;
+        if (hasta && dia > hasta) return false;
+      }
       if (!q) return true;
       return normalizar(`${t.materia} ${nombreDe(t.tutor)}`).includes(q);
     });
@@ -49,17 +64,19 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
       return b.publicada.localeCompare(a.publicada);
     };
 
-    // Las tutorías que ya pasaron siempre van al final
+    //Las tutorías que ya pasaron siempre van al final
     return [
       ...filtradas.filter((t) => !haTerminado(t)).sort(comparar),
       ...filtradas.filter((t) => haTerminado(t)).sort(comparar),
     ];
-  }, [tutorias, busqueda, materia, finalizadas, orden]);
+  }, [tutorias, busqueda, materia, finalizadas, desde, hasta, orden]);
 
   const limpiar = () => {
     setBusqueda("");
     setMateria("todas");
     setFinalizadas(true);
+    setDesde("");
+    setHasta("");
     setOrden("recientes");
   };
 
@@ -113,6 +130,36 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
                 />
                 Mostrar tutorías finalizadas
               </label>
+            </div>
+
+            <div className="grid gap-2">
+              <span className="text-xs font-bold uppercase text-muted-foreground">Fecha de la sesión</span>
+              <div className="grid gap-1.5">
+                <label htmlFor="desde" className="text-xs text-muted-foreground">
+                  Desde
+                </label>
+                <input
+                  id="desde"
+                  type="date"
+                  value={desde}
+                  max={hasta || undefined}
+                  onChange={(e) => setDesde(e.target.value)}
+                  className={`${campo} dark:[color-scheme:dark]`}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <label htmlFor="hasta" className="text-xs text-muted-foreground">
+                  Hasta
+                </label>
+                <input
+                  id="hasta"
+                  type="date"
+                  value={hasta}
+                  min={desde || undefined}
+                  onChange={(e) => setHasta(e.target.value)}
+                  className={`${campo} dark:[color-scheme:dark]`}
+                />
+              </div>
             </div>
 
             <div className="grid gap-1.5">

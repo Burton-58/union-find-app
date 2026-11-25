@@ -91,9 +91,9 @@ export function AppNavbar({
 
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-white/85 sm:inline">
-            Hola, {nombre} ({ROLES[rol]})
+            Hola, {nombre} (Estudiante)
           </span>
-         <Link
+          <Link
             href="/protected/perfil"
             aria-label="Ir a mi perfil"
             title="Mi Perfil"
@@ -110,6 +110,15 @@ export function AppNavbar({
           >
             <Moon size={18} className="dark:hidden" />
             <Sun size={18} className="hidden dark:block" />
+          </button>
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+            className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white active:scale-90"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </div>

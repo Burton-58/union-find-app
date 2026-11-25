@@ -15,6 +15,13 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState } from "react";
 
+function translateError(message: string) {
+  if (message.includes("rate limit") || message.includes("only request this after")) {
+    return "Espera un minuto antes de volver a intentarlo.";
+  }
+  return "Ocurrió un error. Inténtalo de nuevo.";
+}
+
 export function ForgotPasswordForm({
   className,
   ...props
@@ -38,7 +45,11 @@ export function ForgotPasswordForm({
       if (error) throw error;
       setSuccess(true);
     } catch (error: unknown) {
-      setError("Ocurrió un error. Inténtalo de nuevo.");
+      setError(
+        error instanceof Error
+          ? translateError(error.message)
+          : "Ocurrió un error. Inténtalo de nuevo."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -50,13 +61,23 @@ export function ForgotPasswordForm({
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Revisa tu correo</CardTitle>
-            <CardDescription>Te enviamos las instrucciones</CardDescription>
+            <CardDescription>
+              Te enviamos las instrucciones para restablecer tu contraseña
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Si te registraste con correo y contraseña, recibirás un correo
-              para restablecer tu contraseña.
+              Si te registraste con tu correo y contraseña, recibirás un mensaje
+              con un enlace para crear una contraseña nueva.
             </p>
+            <div className="mt-4 text-center text-sm">
+              <Link
+                href="/auth/login"
+                className="underline underline-offset-4"
+              >
+                Volver a iniciar sesión
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -64,7 +85,8 @@ export function ForgotPasswordForm({
           <CardHeader>
             <CardTitle className="text-2xl">Restablecer contraseña</CardTitle>
             <CardDescription>
-              Escribe tu correo y te enviaremos un enlace para restablecer tu contraseña
+              Escribe tu correo y te enviaremos un enlace para crear una
+              contraseña nueva
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -75,7 +97,7 @@ export function ForgotPasswordForm({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="nombre@ejemplo.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -83,16 +105,16 @@ export function ForgotPasswordForm({
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Enviando..." : "Enviar correo"}
+                  {isLoading ? "Enviando..." : "Enviar enlace"}
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">
-                ¿Ya tienes una cuenta?{" "}
+                ¿Ya recordaste tu contraseña?{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Iniciar sesión
+                  Inicia sesión
                 </Link>
               </div>
             </form>
