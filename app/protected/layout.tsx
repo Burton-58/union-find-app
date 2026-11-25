@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AppNavbar } from "@/components/app-navbar";
 import { createClient } from "@/lib/supabase/server";
+import { etiquetaRol } from "@/lib/roles";
 import { getViewer } from "@/lib/tutorias_db";
 
 async function Navbar() {
@@ -12,7 +13,7 @@ async function Navbar() {
     redirect("/auth/login");
   }
 
-  return <AppNavbar email={viewer.email} nombre={viewer.nombre} rol={viewer.rol} />;
+  return <AppNavbar email={viewer.email} nombre={viewer.nombre} rol={etiquetaRol(viewer.rol, viewer.esTutor)} />;
 }
 
 export default function ProtectedLayout({

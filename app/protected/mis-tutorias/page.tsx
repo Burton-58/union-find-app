@@ -24,7 +24,7 @@ async function MisTutorias() {
   const viewer = await getViewer(supabase);
   if (!viewer) redirect("/auth/login");
 
-  const esTutor = viewer.rol !== "student";
+  const esTutor = viewer.esTutor;
   const [inscritas, dadas] = await Promise.all([
     getTutoriasInscritas(supabase, viewer.id),
     esTutor ? getTutoriasDeTutor(supabase, viewer.id) : Promise.resolve([] as Tutoria[]),

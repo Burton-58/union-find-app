@@ -6,7 +6,8 @@ import { ResumenCalificacion } from "@/components/estrellas";
 import { ResenasSection } from "@/components/resenas/resenas-section";
 import { createClient } from "@/lib/supabase/server";
 import { getCalificaciones, getResenas } from "@/lib/resenas";
-import { ROLES } from "@/lib/roles";
+import { calcularEsTutor } from "@/lib/tutorias_db";
+import { etiquetaRol } from "@/lib/roles";
 import { iniciales, type Role } from "@/lib/tutorias";
 
 async function PerfilContenido() {
@@ -31,10 +32,10 @@ async function PerfilContenido() {
   const nombreGuardado: string = fila?.full_name ?? "";
   const nombre = nombreGuardado || email.split("@")[0];
   const rolClave: Role = (fila?.role as Role | undefined) ?? "student";
-  const rol = ROLES[rolClave] ?? "Estudiante";
 
-  // Los tutores ven su calificación y las reseñas que han recibido
-  const esTutor = rolClave !== "student";
+  // Los tutores (rol tutor/admin o con tutorías publicadas) ven su calificación y las reseñas que han recibido
+  const esTutor = await calcularEsTutor(supabase, claims.sub, rolClave);
+  const rol = etiquetaRol(rolClave, esTutor);
   const [calificaciones, resenas] = esTutor
     ? await Promise.all([
         getCalificaciones(supabase, [claims.sub]),
