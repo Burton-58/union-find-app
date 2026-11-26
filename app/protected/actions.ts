@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { esUuid } from "@/lib/tutorias";
+import { esUuid, MAX_CUPOS_TUTORIA, MAX_TUTORIAS_ABIERTAS } from "@/lib/tutorias";
 
 export type Resultado = { ok: true } | { ok: false; error: string };
 
@@ -54,6 +55,77 @@ export async function cancelarInscripcion(postId: string): Promise<Resultado> {
 
   revalidatePath("/protected", "layout");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Crear una tutoría (cualquier usuario; al tener una tutoría también es tutor)
+// Las reglas viven en la base de datos (supabase/006_crear_tutoria.sql).
+// ---------------------------------------------------------------------------
+
+export type CrearTutoriaState = {
+  error?: string;
+  /** Lo que escribió la persona, para no borrar el formulario si hay un error */
+  valores?: { subject: string; capacity: string; session_date: string };
+};
+
+// Códigos que lanza public.create_post()
+const ERRORES_CREAR_TUTORIA: Record<string, string> = {
+  not_authenticated: "Vuelve a iniciar sesión.",
+  profile_not_found: "No encontramos tu perfil. Cierra sesión e inténtalo de nuevo.",
+  invalid_subject: "Escribe la materia o tema (entre 3 y 100 caracteres).",
+  invalid_capacity: `Los cupos deben ser un número entre 1 y ${MAX_CUPOS_TUTORIA}.`,
+  date_required: "Elige la fecha y hora de la sesión.",
+  date_in_past: "La fecha y hora deben ser en el futuro.",
+  too_many_open: `Ya tienes ${MAX_TUTORIAS_ABIERTAS} tutorías próximas. Espera a que se realice alguna para publicar otra.`,
+};
+
+// Las fechas de la app se muestran en hora de Costa Rica (UTC-6, sin horario de
+// verano; ver lib/tutorias.ts). El <input type="datetime-local"> no trae zona
+// horaria, así que aquí se interpreta como hora de Costa Rica.
+const FECHA_LOCAL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
+export async function crearTutoria(
+  _prev: CrearTutoriaState,
+  formData: FormData,
+): Promise<CrearTutoriaState> {
+  const subject = String(formData.get("subject") ?? "").trim();
+  const capacity = String(formData.get("capacity") ?? "").trim();
+  const fechaLocal = String(formData.get("session_date") ?? "").trim();
+  const valores = { subject, capacity, session_date: fechaLocal };
+  const fallo = (error: string): CrearTutoriaState => ({ error, valores });
+
+  if (subject.length < 3 || subject.length > 100) {
+    return fallo(ERRORES_CREAR_TUTORIA.invalid_subject);
+  }
+
+  const cupos = Number(capacity);
+  if (!Number.isInteger(cupos) || cupos < 1 || cupos > MAX_CUPOS_TUTORIA) {
+    return fallo(ERRORES_CREAR_TUTORIA.invalid_capacity);
+  }
+
+  if (!FECHA_LOCAL_RE.test(fechaLocal)) return fallo(ERRORES_CREAR_TUTORIA.date_required);
+  const fecha = new Date(`${fechaLocal}:00-06:00`);
+  if (Number.isNaN(fecha.getTime())) return fallo(ERRORES_CREAR_TUTORIA.date_required);
+  if (fecha.getTime() <= Date.now()) return fallo(ERRORES_CREAR_TUTORIA.date_in_past);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_post", {
+    p_subject: subject,
+    p_capacity: cupos,
+    p_session_date: fecha.toISOString(),
+  });
+  if (error) {
+    return fallo(
+      ERRORES_CREAR_TUTORIA[error.message] ??
+        "No pudimos publicar tu tutoría. Inténtalo de nuevo.",
+    );
+  }
+
+  const id = typeof data === "string" ? data : "";
+  // Cambia la etiqueta del navbar a "Estudiante y Tutor" y refresca los listados
+  revalidatePath("/protected", "layout");
+  // redirect() lanza una excepción especial: debe quedar fuera de cualquier try/catch
+  redirect(esUuid(id) ? `/protected/tutoria/${id}` : "/protected/mis-tutorias");
 }
 
 // ---------------------------------------------------------------------------

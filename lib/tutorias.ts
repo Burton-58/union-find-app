@@ -27,6 +27,10 @@ export type Tutoria = {
   publicada: string;
 };
 
+/** Límites al crear una tutoría (deben coincidir con supabase/006_crear_tutoria.sql). */
+export const MAX_CUPOS_TUTORIA = 50;
+export const MAX_TUTORIAS_ABIERTAS = 10;
+
 export function nombreDe(p: { nombre: string | null } | null | undefined) {
   return p?.nombre?.trim() || "Usuario sin nombre";
 }

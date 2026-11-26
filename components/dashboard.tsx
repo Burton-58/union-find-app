@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter, Search, SearchX } from "lucide-react";
+import Link from "next/link";
+import { Filter, Plus, Search, SearchX } from "lucide-react";
 import { TutoriaCard } from "@/components/tutoria-card";
 import { type Tutoria, cuposLibres, haTerminado, nombreDe } from "@/lib/tutorias";
 
@@ -85,11 +86,20 @@ export function Dashboard({ tutorias }: { tutorias: Tutoria[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <h1 className="text-3xl font-bold tracking-tight">Encuentra tu tutoría</h1>
-        <p className="mt-1 text-muted-foreground">
-          Explora las sesiones publicadas por estudiantes del TEC y reserva tu cupo.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Encuentra tu tutoría</h1>
+          <p className="mt-1 text-muted-foreground">
+            Explora las sesiones publicadas por estudiantes del TEC y reserva tu cupo.
+          </p>
+        </div>
+        <Link
+          href="/protected/crear-tutoria"
+          className="flex items-center gap-2 rounded-lg bg-[#003366] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#004a99] active:scale-95"
+        >
+          <Plus size={16} />
+          Crear tutoría
+        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">

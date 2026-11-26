@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Moon, ShieldCheck, Sun } from "lucide-react"; //modo oscuro
 import { useTheme } from "next-themes";
+import { LanguageToggle } from "@/components/language-toggle";
 import { createClient } from "@/lib/supabase/client";
 import { iniciales } from "@/lib/tutorias";
 import { cn } from "@/lib/utils";
@@ -120,6 +121,7 @@ export function AppNavbar({
           >
             {iniciales(nombre)}
           </Link>
+          <LanguageToggle className="text-white/70 hover:bg-white/10 hover:text-white" />
           <button
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}

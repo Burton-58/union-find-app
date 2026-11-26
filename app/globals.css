@@ -66,3 +66,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Google Translate (modo inglés): ocultamos su banner y su widget, la interfaz es
+   nuestro botón <LanguageToggle />. El banner además empuja el <body> hacia abajo. */
+body > .skiptranslate,
+iframe.skiptranslate,
+.goog-te-banner-frame,
+#google_translate_element,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}

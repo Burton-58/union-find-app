@@ -1,15 +1,17 @@
 {/*con el fin de no hacer tantos cambios ya que varias pantallas se ven iguales*/}
 import Image from "next/image";
 import Link from "next/link";
+import { LanguageToggle } from "@/components/language-toggle";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-svh w-full flex-col bg-background">
-      <header className="flex h-12 w-full items-center bg-[#004AAD] px-6 md:px-10">
+      <header className="flex h-12 w-full items-center justify-between bg-[#004AAD] px-6 md:px-10">
         {/* nombre de la app, arriba a la izquierda */}
         <Link href="/" className="text-lg font-semibold text-white">
           Union-Find
         </Link>
+        <LanguageToggle className="text-white/80 hover:bg-white/10 hover:text-white" />
       </header>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden p-6 md:p-10">

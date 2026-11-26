@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Plus, Users } from "lucide-react";
 import { TutoriaCard } from "@/components/tutoria-card";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -43,11 +43,20 @@ async function MisTutorias() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">Mis Tutorías</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Las tutorías en las que estás inscrito{esTutor ? " y las que impartes" : ""}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">Mis Tutorías</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Las tutorías en las que estás inscrito{esTutor ? " y las que impartes" : ""}.
+          </p>
+        </div>
+        <Link
+          href="/protected/crear-tutoria"
+          className="flex items-center gap-2 rounded-lg bg-[#003366] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#004a99] active:scale-95"
+        >
+          <Plus size={16} />
+          Crear tutoría
+        </Link>
       </div>
 
       <section className="flex flex-col gap-4">
