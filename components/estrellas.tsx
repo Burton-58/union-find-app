@@ -2,7 +2,6 @@ import { Star } from "lucide-react";
 import type { Calificacion } from "@/lib/tutorias";
 import { cn } from "@/lib/utils";
 
-/** Fila de 5 estrellas de solo lectura. Los decimales se redondean a la estrella más cercana. */
 export function Estrellas({ valor, size = 14 }: { valor: number; size?: number }) {
   const llenas = Math.round(valor);
   return (
@@ -25,7 +24,6 @@ export function Estrellas({ valor, size = 14 }: { valor: number; size?: number }
   );
 }
 
-/** "★★★★☆ 4.4 (5 reseñas)" — o "Sin reseñas aún" si el tutor no tiene ninguna. */
 export function ResumenCalificacion({
   calificacion,
   mostrarVacio = true,

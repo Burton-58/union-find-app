@@ -52,7 +52,7 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -60,6 +60,10 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
+      if (data.user?.identities?.length === 0) {
+        setError("Este correo ya está registrado. Inicia sesión o restablece tu contraseña.");
+        return;
+      }
       router.push("/auth/sign-up-success");
        } catch (error: unknown) {
       console.error(error);
